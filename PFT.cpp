@@ -27,7 +27,7 @@ public:
         cin >> username;
 
         if (userExists(username)) {
-            cout << "❌ Username already exists! Try another.\n";
+            cout << "Username already exists! Try another.\n";
             return false;
         }
 
@@ -39,7 +39,7 @@ public:
         fout << username << " " << password << "\n";
         fout.close();
 
-        cout << "✅ Account created successfully!\n";
+        cout << "Account created successfully.\n";
         return true;
     }
 
@@ -59,34 +59,84 @@ public:
         string u, p;
         while (fin >> u >> p) {
             if (u == username && p == password) {
-                cout << "✅ Login successful! Welcome " << username << "\n\n";
+                cout << "Login successful! Welcome " << username << "\n\n";
                 return true;
             }
         }
 
-        cout << "❌ Invalid credentials!\n";
+        cout << "Invalid credentials.\n";
         return false;
     }
 };
 
-// -------------------- TRANSACTION STRUCT --------------------
-struct Transaction {
+// -------------------- TRANSACTION CLASS --------------------
+class Transaction {
     string date, description, category, accountType;
     double amount;
     bool isIncome;
+
+public:
+    Transaction() : amount(0), isIncome(false) {}
+
+    void input() {
+        cout << "Enter date (DD-MM-YYYY): ";
+        cin >> date;
+        cout << "Enter description: ";
+        cin >> description;
+        cout << "Enter category: ";
+        cin >> category;
+        cout << "Enter amount: ";
+        cin >> amount;
+        cout << "Enter account name: ";
+        cin >> accountType;
+        char type;
+        cout << "Income (i) or Expense (e)? ";
+        cin >> type;
+        isIncome = (type == 'i');
+    }
+
+    void display() const {
+        cout << date << " | " << description << " | " << category << " | "
+             << (isIncome ? "Income" : "Expense") << " | "
+             << amount << " | " << accountType << endl;
+    }
+
+    string toFileString() const {
+        return date + "," + description + "," + category + "," +
+               to_string(amount) + "," + (isIncome ? "1" : "0") + "," + accountType;
+    }
+
+    void fromFileString(const string& line) {
+        size_t pos = 0, idx = 0;
+        string parts[6];
+        string temp = line;
+        while ((pos = temp.find(',')) != string::npos && idx < 5) {
+            parts[idx++] = temp.substr(0, pos);
+            temp.erase(0, pos + 1);
+        }
+        parts[idx] = temp;
+        date = parts[0];
+        description = parts[1];
+        category = parts[2];
+        amount = stod(parts[3]);
+        isIncome = (parts[4] == "1");
+        accountType = parts[5];
+    }
+
+    bool getIsIncome() const { return isIncome; }
+    double getAmount() const { return amount; }
+    string getAccountType() const { return accountType; }
 };
 
-// -------------------- FILE HANDLER CLASS --------------------
+// -------------------- FILE HANDLER --------------------
 class FileHandler {
 public:
-    static void saveTransactions(const Transaction* list, int count, const string& username) {
+    static void saveTransactions(Transaction* list, int count, const string& username) {
         string filename = "transactions_" + username + ".txt";
         ofstream fout(filename, ios::out);
-        if (!fout) throw runtime_error("Failed to save file!");
-        for (int i = 0; i < count; i++) {
-            fout << list[i].date << "," << list[i].description << "," << list[i].category << ","
-                 << list[i].amount << "," << list[i].isIncome << "," << list[i].accountType << "\n";
-        }
+        if (!fout) throw runtime_error("Failed to save file.");
+        for (int i = 0; i < count; i++)
+            fout << list[i].toFileString() << "\n";
         fout.close();
     }
 
@@ -94,16 +144,10 @@ public:
         string filename = "transactions_" + username + ".txt";
         ifstream fin(filename);
         if (!fin) return 0;
-        string d, desc, cat, acc;
-        double amt; int income, count = 0;
-        while (getline(fin, d, ',')) {
-            getline(fin, desc, ',');
-            getline(fin, cat, ',');
-            fin >> amt; fin.ignore();
-            fin >> income; fin.ignore();
-            getline(fin, acc);
-            list[count++] = {d, desc, cat, acc, amt, (bool)income};
-            if (count >= 100) break; // limit
+        string line;
+        int count = 0;
+        while (getline(fin, line) && count < 100) {
+            list[count++].fromFileString(line);
         }
         fin.close();
         return count;
@@ -116,7 +160,7 @@ protected:
     string accountName;
     double balance;
 public:
-    Account() {}
+    Account() : balance(0) {}
     void createAccount() {
         cout << "Enter account name: ";
         cin >> accountName;
@@ -130,14 +174,13 @@ public:
         balance += (income ? amt : -amt);
     }
     string getName() const { return accountName; }
-    double getBalance() const { return balance; }
 };
 
 // -------------------- LOAN CLASS --------------------
 class Loan : public Account {
     double emi, interestRate;
 public:
-    Loan() {}
+    Loan() : emi(0), interestRate(0) {}
     void createLoan() {
         cout << "Enter loan name: ";
         cin >> accountName;
@@ -163,13 +206,14 @@ public:
 class Budget {
     double monthlyLimit;
 public:
+    Budget() : monthlyLimit(0) {}
     void setLimit() {
         cout << "Enter monthly limit: ";
         cin >> monthlyLimit;
     }
     bool checkLimit(double totalExpense) {
         if (totalExpense > monthlyLimit && monthlyLimit > 0) {
-            cout << "⚠️ Warning! You exceeded your monthly budget of " << monthlyLimit << endl;
+            cout << "Warning! You exceeded your monthly budget of " << monthlyLimit << endl;
             return false;
         }
         return true;
@@ -189,18 +233,19 @@ public:
     }
 };
 
-// -------------------- SAVING GOAL --------------------
+// -------------------- SAVING GOAL CLASS --------------------
 class SavingGoal {
     double goalAmount;
 public:
+    SavingGoal() : goalAmount(0) {}
     void setGoal() {
-        cout << "Enter goal amount: ";
+        cout << "Enter saving goal amount: ";
         cin >> goalAmount;
     }
     void checkGoal(double currentSavings) {
         if (goalAmount > 0) {
             if (currentSavings >= goalAmount)
-                cout << "🎉 Congratulations! You reached your saving goal of " << goalAmount << endl;
+                cout << "Congratulations! You reached your saving goal of " << goalAmount << endl;
             else
                 cout << "Keep saving! You need " << (goalAmount - currentSavings) << " more.\n";
         }
@@ -231,41 +276,32 @@ public:
 
     void addTransaction() {
         try {
-            if (count >= 100) throw overflow_error("Transaction limit reached!");
+            if (count >= 100) throw overflow_error("Transaction limit reached.");
             Transaction t;
-            cout << "Enter date (DD-MM-YYYY): "; cin >> t.date;
-            cout << "Enter description: "; cin >> t.description;
-            cout << "Enter category: "; cin >> t.category;
-            cout << "Enter amount: "; cin >> t.amount;
-            cout << "Enter account (exact name as created): "; cin >> t.accountType;
-            char type; cout << "Income (i) or Expense (e)? "; cin >> type;
-            t.isIncome = (type == 'i');
+            t.input();
             transactions[count++] = t;
 
             for (int i = 0; i < 3; i++)
-                if (accounts[i].getName() == t.accountType)
-                    accounts[i].updateBalance(t.amount, t.isIncome);
+                if (accounts[i].getName() == t.getAccountType())
+                    accounts[i].updateBalance(t.getAmount(), t.getIsIncome());
 
-            if (t.isIncome) totalIncome += t.amount; else totalExpense += t.amount;
+            if (t.getIsIncome()) totalIncome += t.getAmount();
+            else totalExpense += t.getAmount();
 
-            cout << "Transaction added successfully!\n";
+            cout << "Transaction added successfully.\n";
         }
         catch (exception& e) {
-            cout << "⚠️ Error: " << e.what() << endl;
+            cout << "Error: " << e.what() << endl;
         }
     }
 
     void viewReport() {
         cout << "\n--- Transaction Report ---\n";
-        for (int i = 0; i < count; i++) {
-            cout << transactions[i].date << " | " << transactions[i].description << " | "
-                 << transactions[i].category << " | "
-                 << (transactions[i].isIncome ? "Income" : "Expense") << " | "
-                 << transactions[i].amount << " | " << transactions[i].accountType << endl;
-        }
+        for (int i = 0; i < count; i++)
+            transactions[i].display();
         cout << "\nTotal Income: " << totalIncome;
         cout << "\nTotal Expense: " << totalExpense;
-        cout << "\nBalance: " << (totalIncome - totalExpense) << "\n";
+        cout << "\nNet Balance: " << (totalIncome - totalExpense) << "\n";
     }
 
     void viewAccounts() {
@@ -281,12 +317,12 @@ public:
     void checkGoal() { goal.checkGoal(totalIncome - totalExpense); }
     void calculateTax() {
         double tax = TaxCalculator::calculateTax(totalIncome);
-        cout << "\nEstimated Tax: " << tax << endl;
+        cout << "Estimated Tax: " << tax << endl;
     }
 
     void saveAndExit() {
         FileHandler::saveTransactions(transactions, count, username);
-        cout << "Data saved successfully. Goodbye!\n";
+        cout << "Data saved successfully. Goodbye.\n";
     }
 };
 
@@ -303,7 +339,7 @@ int main() {
             cout << "\n1. Sign Up\n2. Login\n3. Exit\nEnter choice: ";
             cin >> choice;
 
-            if (cin.fail()) throw invalid_argument("Invalid input type!");
+            if (cin.fail()) throw invalid_argument("Invalid input type.");
 
             if (choice == 1) user.signup();
             else if (choice == 2) {
@@ -346,7 +382,7 @@ int main() {
         }
     }
     catch (exception& e) {
-        cout << "⚠️ Exception: " << e.what() << endl;
+        cout << "Exception: " << e.what() << endl;
     }
 
     return 0;
