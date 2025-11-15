@@ -1,0 +1,4 @@
+Account,Cash,8000
+Account,Bank,10000
+Account,Savings,10000
+Loan,car,12000,2472.48,12

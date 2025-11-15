@@ -1,0 +1,2 @@
+11-11-2025,tshirt purchase,luxury,2000.000000,0,card
+11-11-2025,tshirt,luxury,2000.000000,0,Cash
