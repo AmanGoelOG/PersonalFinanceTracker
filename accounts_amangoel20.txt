@@ -1,0 +1,4 @@
+Account,Cash,1000
+Account,Bank,1000
+Account,Savings,1000
+Loan,NA,0,0,0
