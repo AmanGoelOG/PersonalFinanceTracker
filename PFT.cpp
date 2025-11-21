@@ -187,7 +187,7 @@ public:
         return result;
     }
     static double calculateEMI(double principal, double annualRate, int months) {
-        if (principal <= 0) throw invalid_argument("Principal must be > 0");
+        if (principal <= 0) throw invalid_argument("No Loan is there");
         if (months <= 0) throw invalid_argument("Months must be > 0");
         if (annualRate < 0) throw invalid_argument("Rate cannot be negative");
         double r = annualRate / (12.0 * 100.0);
